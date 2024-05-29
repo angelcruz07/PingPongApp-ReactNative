@@ -27,11 +27,11 @@ const normalizeVector = (vector: { x: number; y: number }) => {
 export default function Game() {
 	const { height, width } = useWindowDimensions()
 	const playerDimensions = {
-		x: width / 4,
-		y: height - 150,
 		w: width / 2,
 		h: 37
 	}
+
+	const [score, setScore] = useState(0)
 
 	const targetPositionX = useSharedValue(width / 2)
 	const targetPositionY = useSharedValue(height / 2)
