@@ -1,11 +1,19 @@
-import React, { useEffect, useState } from 'react'
-import { View, StyleSheet, useWindowDimensions } from 'react-native'
+import { useEffect, useState } from 'react'
+import {
+	View,
+	StyleSheet,
+	useWindowDimensions,
+	Text,
+	Button
+} from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
 	Easing,
 	useAnimatedStyle,
 	useSharedValue,
-	withTiming
+	withSequence,
+	withTiming,
+	BounceIn
 } from 'react-native-reanimated'
 
 const FPS = 60
@@ -32,6 +40,7 @@ export default function Game() {
 	}
 
 	const [score, setScore] = useState(0)
+	const [gameOver, setGameOver] = useState(true)
 
 	const targetPositionX = useSharedValue(width / 2)
 	const targetPositionY = useSharedValue(height / 2)
@@ -42,18 +51,29 @@ export default function Game() {
 	const playerPosition = useSharedValue({ x: width / 4, y: height - 150 })
 
 	useEffect(() => {
-		const interval = setInterval(update, DELTA)
+		const interval = setInterval(() => {
+			if (!gameOver) {
+				update()
+			}
+		}, DELTA)
 
 		return () => {
 			clearInterval(interval)
 		}
-	}, [])
+	}, [gameOver])
 
 	const update = () => {
+		if (gameOver) {
+			return
+		}
+
 		let nextPos = getNextPosition(direction.value)
 		let newDirection = direction.value
 
 		// Wall hit detection
+		if (nextPos.y > height - BALL_WIDTH) {
+			setGameOver(true)
+		}
 		if (nextPos.y < 0 || nextPos.y > height - BALL_WIDTH) {
 			newDirection = { x: direction.value.x, y: -direction.value.y }
 		}
@@ -77,6 +97,7 @@ export default function Game() {
 			} else {
 				newDirection = { x: direction.value.x, y: -direction.value.y }
 			}
+			setScore((score) => score + 1)
 		}
 
 		//Player hit detection
@@ -122,6 +143,23 @@ export default function Game() {
 		}
 	})
 
+	const islandAnimatedStyles = useAnimatedStyle(
+		() => ({
+			width: withSequence(
+				withTiming(islandDimensions.w * 1.3),
+				withTiming(islandDimensions.w)
+			),
+
+			height: withSequence(
+				withTiming(islandDimensions.h * 1.3),
+				withTiming(islandDimensions.h)
+			),
+
+			opacity: withSequence(withTiming(0), withTiming(1))
+		}),
+		[score]
+	)
+
 	const playerAnimatedStyles = useAnimatedStyle(() => ({
 		left: playerPosition.value.x
 	}))
@@ -143,11 +181,55 @@ export default function Game() {
 			}
 		})
 
+	const restartGame = () => {
+		targetPositionX.value = width / 2
+		targetPositionY.value = height / 2
+		setScore(0)
+		setGameOver(false)
+	}
+
 	return (
 		<View style={styles.container}>
-			<Animated.View style={[styles.ball, ballAnimatedStyles]} />
+			{/* Score */}
+			<Text style={styles.score}>{score}</Text>
+
+			{gameOver && (
+				<View style={styles.gameOverContainer}>
+					<Text style={styles.gameOver}>Game over</Text>
+					<Button title='Reiniciar' onPress={restartGame} />
+				</View>
+			)}
+
+			{!gameOver && <Animated.View style={[styles.ball, ballAnimatedStyles]} />}
 			{/* Island */}
-			<View style={styles.paddle}></View>
+			<Animated.View
+				entering={BounceIn}
+				key={score}
+				style={{
+					position: 'absolute',
+					top: islandDimensions.y,
+					left: islandDimensions.x,
+					width: islandDimensions.w,
+					height: islandDimensions.h,
+					borderRadius: 20,
+					backgroundColor: '#fff'
+				}}
+			/>
+
+			{/* <Animated.View
+				entering={BounceIn}
+				key={score}
+				style={{
+					position: 'absolute',
+					top: 10,
+					width: islandDimensions.w,
+					height: islandDimensions.h,
+					alignItems: 'center',
+					justifyContent: 'center',
+					borderRadius: 50
+				}}>
+				{' '}
+			</Animated.View> */}
 
 			{/* Player */}
 			<Animated.View
@@ -191,19 +273,33 @@ const styles = StyleSheet.create({
 		borderRadius: 25,
 		backgroundColor: '#fff'
 	},
-	paddle: {
-		left: islandDimensions.x,
-		width: islandDimensions.w,
-		height: islandDimensions.h,
+	island: {
 		position: 'absolute',
+		top: islandDimensions.y,
+		left: islandDimensions.x,
 		bottom: 30,
 		borderRadius: 20,
 		backgroundColor: '#fff'
+	},
+	score: {
+		position: 'absolute',
+		top: 50,
+		color: '#fff',
+		fontSize: 20
+	},
+	gameOverContainer: {
+		position: 'absolute',
+		top: 0,
+		width: '100%',
+		height: '100%',
+		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	gameOver: {
+		position: 'absolute',
+		top: 10,
+		color: 'red',
+		fontSize: 30
 	}
-	// score: {
-	//   position: 'absolute',
-	//   top: 50,
-	//   color: '#fff',
-	//   fontSize: 20,
-	// },
 })
