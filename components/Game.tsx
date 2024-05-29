@@ -18,7 +18,7 @@ import Animated, {
 
 const FPS = 60
 const DELTA = 1000 / FPS
-const SPEED = 10
+const SPEED = 20
 const BALL_WIDTH = 25
 
 const islandDimensions = { x: 150, y: 11, w: 127, h: 37 }
@@ -212,24 +212,9 @@ export default function Game() {
 					width: islandDimensions.w,
 					height: islandDimensions.h,
 					borderRadius: 20,
-					backgroundColor: '#fff'
+					backgroundColor: '#000'
 				}}
 			/>
-
-			{/* <Animated.View
-				entering={BounceIn}
-				key={score}
-				style={{
-					position: 'absolute',
-					top: 10,
-					width: islandDimensions.w,
-					height: islandDimensions.h,
-					alignItems: 'center',
-					justifyContent: 'center',
-					borderRadius: 50
-				}}>
-				{' '}
-			</Animated.View> */}
 
 			{/* Player */}
 			<Animated.View
@@ -241,7 +226,7 @@ export default function Game() {
 						width: playerDimensions.w,
 						height: playerDimensions.h,
 						borderRadius: 20,
-						backgroundColor: '#fff'
+						backgroundColor: '#000'
 					},
 					playerAnimatedStyles
 				]}></Animated.View>
@@ -262,7 +247,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		width: '100%',
-		backgroundColor: '#000',
+		backgroundColor: '#fff',
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
@@ -271,7 +256,7 @@ const styles = StyleSheet.create({
 		width: BALL_WIDTH,
 		aspectRatio: 1,
 		borderRadius: 25,
-		backgroundColor: '#fff'
+		backgroundColor: '#000'
 	},
 	island: {
 		position: 'absolute',
@@ -282,14 +267,14 @@ const styles = StyleSheet.create({
 		backgroundColor: '#fff'
 	},
 	score: {
+		fontSize: 150,
+		fontWeight: '300',
 		position: 'absolute',
-		top: 50,
-		color: '#fff',
-		fontSize: 20
+		top: 150,
+		color: 'lightgray'
 	},
 	gameOverContainer: {
 		position: 'absolute',
-		top: 0,
 		width: '100%',
 		height: '100%',
 		backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -298,7 +283,7 @@ const styles = StyleSheet.create({
 	},
 	gameOver: {
 		position: 'absolute',
-		top: 10,
+		top: 300,
 		color: 'red',
 		fontSize: 30
 	}
