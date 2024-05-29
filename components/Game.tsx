@@ -1,20 +1,11 @@
 import React, { useEffect } from 'react'
-import {
-	View,
-	StyleSheet,
-	useWindowDimensions,
-	BackHandler
-} from 'react-native'
-import {
-	GestureHandlerRootView,
-	PanGestureHandler
-} from 'react-native-gesture-handler'
+import { View, StyleSheet, useWindowDimensions } from 'react-native'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
+	Easing,
 	useAnimatedStyle,
 	useSharedValue,
-	withTiming,
-	Easing,
-	useAnimatedGestureHandler
+	withTiming
 } from 'react-native-reanimated'
 
 const FPS = 60
@@ -47,6 +38,8 @@ export default function Game() {
 	const direction = useSharedValue(
 		normalizeVector({ x: Math.random(), y: Math.random() })
 	)
+
+	const playerPosition = useSharedValue({ x: width / 4, y: height - 150 })
 
 	useEffect(() => {
 		const interval = setInterval(update, DELTA)
@@ -86,6 +79,23 @@ export default function Game() {
 			}
 		}
 
+		//Player hit detection
+		if (
+			nextPos.x < playerPosition.value.x + playerDimensions.w &&
+			nextPos.x + BALL_WIDTH > playerPosition.value.x &&
+			nextPos.y < playerPosition.value.y + playerDimensions.h &&
+			BALL_WIDTH + nextPos.y > playerPosition.value.y
+		) {
+			if (
+				targetPositionX.value < playerPosition.value.x ||
+				targetPositionX.value > playerPosition.value.x + playerDimensions.w
+			) {
+				newDirection = { x: -direction.value.x, y: direction.value.y }
+			} else {
+				newDirection = { x: direction.value.x, y: -direction.value.y }
+			}
+		}
+
 		direction.value = newDirection
 		nextPos = getNextPosition(newDirection)
 
@@ -112,34 +122,48 @@ export default function Game() {
 		}
 	})
 
-	const gestureHandler = useAnimatedGestureHandler({
-		onStart: (event, ctx) => {
-			ctx.startX = targetPositionX.value
-			ctx.startY = targetPositionY.value
-		},
-		onActive: (event, ctx) => {
-			targetPositionX.value = ctx.startX + event.translationX
-			targetPositionY.value = ctx.startY + event.translationY
-		}
-	})
+	const playerAnimatedStyles = useAnimatedStyle(() => ({
+		left: playerPosition.value.x
+	}))
+
+	const gestureHandler = Gesture.Pan()
+		.onUpdate((event) => {
+			playerPosition.value = {
+				x: event.translationX + width / 4,
+				y: height - 150
+			}
+		})
+		.onEnd(() => {
+			playerPosition.value = {
+				x: Math.min(
+					Math.max(playerPosition.value.x, 0),
+					width - playerDimensions.w
+				),
+				y: height - 150
+			}
+		})
 
 	return (
 		<View style={styles.container}>
 			<Animated.View style={[styles.ball, ballAnimatedStyles]} />
 			{/* Island */}
 			<View style={styles.paddle}></View>
+
 			{/* Player */}
 			<Animated.View
-				style={{
-					position: 'absolute',
-					top: playerDimensions.y,
-					left: playerDimensions.x,
-					width: playerDimensions.w,
-					height: playerDimensions.h,
-					borderRadius: 20,
-					backgroundColor: '#fff'
-				}}></Animated.View>
-			<PanGestureHandler onGestureEvent={gestureHandler}>
+				style={[
+					{
+						position: 'absolute',
+						top: playerPosition.value.y,
+						left: playerPosition.value.x,
+						width: playerDimensions.w,
+						height: playerDimensions.h,
+						borderRadius: 20,
+						backgroundColor: '#fff'
+					},
+					playerAnimatedStyles
+				]}></Animated.View>
+			<GestureDetector gesture={gestureHandler}>
 				<View
 					style={{
 						width: '100%',
@@ -147,7 +171,7 @@ export default function Game() {
 						position: 'absolute',
 						bottom: 0
 					}}></View>
-			</PanGestureHandler>
+			</GestureDetector>
 		</View>
 	)
 }
@@ -168,7 +192,6 @@ const styles = StyleSheet.create({
 		backgroundColor: '#fff'
 	},
 	paddle: {
-		top: islandDimensions.y,
 		left: islandDimensions.x,
 		width: islandDimensions.w,
 		height: islandDimensions.h,
